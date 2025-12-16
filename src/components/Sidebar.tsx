@@ -31,10 +31,22 @@ export function Sidebar() {
 
   if (!user) return null
 
+  const isActive = (href: string) => {
+    if (href === '/students') {
+      return pathname === '/students' || 
+             (pathname.startsWith('/students/') && 
+              !pathname.startsWith('/students/new'))
+    }
+    if (href === '/students/new') {
+      return pathname === '/students/new'
+    }
+    return pathname === href || pathname.startsWith(href + '/')
+  }
+
   return (
     <Box
       as="aside"
-      w={{ base: 'full', md: '250px' }}
+      w={{ base: 'full', md: '200px' }}
       bg={bg}
       borderRight="1px"
       borderColor={borderColor}
@@ -50,15 +62,16 @@ export function Sidebar() {
           NAVIGATION
         </Text>
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          const active = isActive(item.href)
           return (
             <Button
               key={item.href}
               as={Link}
               href={item.href}
-              variant={isActive ? 'solid' : 'ghost'}
-              colorScheme={isActive ? 'blue' : 'gray'}
+              variant={active ? 'solid' : 'ghost'}
+              colorScheme={active ? 'blue' : 'gray'}
               justifyContent="flex-start"
+              size="md"
               leftIcon={item.icon ? <Text>{item.icon}</Text> : undefined}
             >
               {item.label}

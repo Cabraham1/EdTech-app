@@ -15,11 +15,12 @@ import {
   Text,
 } from '@chakra-ui/react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/AuthContext'
 
 export function Header() {
   const router = useRouter()
+  const pathname = usePathname()
   const { user, logout } = useAuth()
   const bg = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
@@ -27,6 +28,18 @@ export function Header() {
   const handleLogout = () => {
     logout()
     router.push('/login')
+  }
+
+  const isActive = (href: string) => {
+    if (href === '/students') {
+      return pathname === '/students' || 
+             (pathname.startsWith('/students/') && 
+              !pathname.startsWith('/students/new'))
+    }
+    if (href === '/students/new') {
+      return pathname === '/students/new'
+    }
+    return pathname === href || pathname.startsWith(href + '/')
   }
 
   return (
@@ -53,7 +66,7 @@ export function Header() {
             <Button
               as={Link}
               href="/students"
-              variant="ghost"
+              variant={isActive('/students') ? 'solid' : 'ghost'}
               colorScheme="blue"
             >
               Students
@@ -61,7 +74,7 @@ export function Header() {
             <Button
               as={Link}
               href="/students/new"
-              variant="ghost"
+              variant={isActive('/students/new') ? 'solid' : 'ghost'}
               colorScheme="blue"
             >
               Add Student

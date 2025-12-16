@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   CardBody,
+  SimpleGrid,
 } from '@chakra-ui/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'

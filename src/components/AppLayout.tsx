@@ -22,7 +22,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <Box
           as="main"
           flex="1"
-          ml={{ base: 0, lg: '250px' }}
+          ml={{ base: 0, lg: '200px' }}
           display="flex"
           flexDirection="column"
         >
