@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   CardBody,
+  Text,
 } from '@chakra-ui/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
