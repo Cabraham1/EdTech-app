@@ -1,19 +1,18 @@
 [
   {
-    "id": "1",
-    "name": "John Doe",
-    "registrationNumber": "202401234",
-    "major": "Computer Science",
-    "dob": "2001-05-05",
-    "gpa": 3.8
-  },
-  {
     "id": "2",
     "name": "Jane Smith",
     "registrationNumber": "202401245",
     "major": "Mechanical Engineering",
     "dob": "2002-05-21",
     "gpa": 3.6
+  },
+  {
+    "name": "Abraham Christopher",
+    "registrationNumber": "202439087",
+    "major": "electrical",
+    "dob": "1993-02-12",
+    "gpa": 3.4,
+    "id": "038503e5-4d79-4afb-85ad-68dc8c1d565f"
   }
 ]
-
