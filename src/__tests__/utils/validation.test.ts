@@ -147,7 +147,7 @@ describe('validateStudentInput', () => {
       const errors = validateStudentInput({ ...validInput, gpa: -0.1 })
       expect(errors).toContainEqual({
         field: 'gpa',
-        message: 'GPA must be between 0.0 and 4.0',
+        message: 'GPA must be between 0 and 4',
       })
     })
 
@@ -155,7 +155,7 @@ describe('validateStudentInput', () => {
       const errors = validateStudentInput({ ...validInput, gpa: 4.1 })
       expect(errors).toContainEqual({
         field: 'gpa',
-        message: 'GPA must be between 0.0 and 4.0',
+        message: 'GPA must be between 0 and 4',
       })
     })
 

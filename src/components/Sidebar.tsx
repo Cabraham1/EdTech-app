@@ -46,11 +46,11 @@ export function Sidebar() {
   return (
     <Box
       as="aside"
-      w={{ base: 'full', md: '200px' }}
+      w={{ base: 'full', md: '180px' }}
       bg={bg}
       borderRight="1px"
       borderColor={borderColor}
-      p={4}
+      p={3}
       display={{ base: 'none', lg: 'block' }}
       position="sticky"
       top="64px"
@@ -58,7 +58,7 @@ export function Sidebar() {
       overflowY="auto"
     >
       <VStack spacing={2} align="stretch">
-        <Text fontSize="xs" fontWeight="bold" color="gray.500" px={2} py={2}>
+        <Text fontSize="xs" fontWeight="bold" color="gray.500" px={2} py={1}>
           NAVIGATION
         </Text>
         {navItems.map((item) => {
@@ -71,7 +71,8 @@ export function Sidebar() {
               variant={active ? 'solid' : 'ghost'}
               colorScheme={active ? 'blue' : 'gray'}
               justifyContent="flex-start"
-              size="md"
+              size="sm"
+              fontSize="sm"
               leftIcon={item.icon ? <Text>{item.icon}</Text> : undefined}
             >
               {item.label}
