@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form'
 import { Student, StudentInput } from '@/lib/data/types'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useStudentStorage } from '@/lib/hooks/useStudentStorage'
 
 interface StudentFormProps {
   student?: Student
@@ -23,6 +24,7 @@ export function StudentForm({ student, isEdit = false }: StudentFormProps) {
   const router = useRouter()
   const toast = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { getStorageHeader, syncToStorage } = useStudentStorage()
 
   const {
     register,
@@ -48,11 +50,14 @@ export function StudentForm({ student, isEdit = false }: StudentFormProps) {
         : '/api/students'
       const method = isEdit ? 'PUT' : 'POST'
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...getStorageHeader(),
+      }
+
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(data),
       })
 
@@ -79,6 +84,10 @@ export function StudentForm({ student, isEdit = false }: StudentFormProps) {
           })
         }
         return
+      }
+
+      if (result.allStudents) {
+        syncToStorage(result.allStudents)
       }
 
       toast({

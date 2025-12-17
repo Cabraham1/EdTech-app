@@ -1,5 +1,3 @@
-export const STUDENT_DATA_FILE = 'data/students.json'
-
 export const VALIDATION_RULES = {
   name: {
     minLength: 2,
@@ -21,5 +19,4 @@ export const VALIDATION_RULES = {
   age: {
     min: 16,
   },
-} as const
-
+} as const;

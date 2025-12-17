@@ -13,6 +13,7 @@ import {
 } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
+import { useStudentStorage } from '@/lib/hooks/useStudentStorage'
 
 interface DeleteButtonProps {
   studentId: string
@@ -24,17 +25,28 @@ export function DeleteButton({ studentId }: DeleteButtonProps) {
   const router = useRouter()
   const toast = useToast()
   const [isDeleting, setIsDeleting] = useState(false)
+  const { getStorageHeader, syncToStorage } = useStudentStorage()
 
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
+      const headers: Record<string, string> = {
+        ...getStorageHeader(),
+      }
+
       const response = await fetch(`/api/students/${studentId}`, {
         method: 'DELETE',
+        headers,
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        const result = await response.json()
         throw new Error(result.error || 'Failed to delete student')
+      }
+
+      if (result.allStudents) {
+        syncToStorage(result.allStudents)
       }
 
       toast({

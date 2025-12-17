@@ -18,6 +18,7 @@ import { studentService } from '@/lib/services/studentService'
 import { StudentCard } from '@/components/StudentCard'
 import { SearchBar } from '@/components/SearchBar'
 import { FilterControls } from '@/components/FilterControls'
+import { StudentStorageSync } from '@/components/StudentStorageSync'
 
 interface StudentsPageProps {
   searchParams: {
@@ -43,6 +44,7 @@ export default async function StudentsPage({
 
   return (
     <Box bgGradient="linear(to-r, blue.50, purple.50)" minH="calc(100vh - 64px)" py={8}>
+      <StudentStorageSync />
       <Container maxW="container.xl">
         <VStack spacing={6} align="stretch">
           <HStack justify="space-between" flexWrap="wrap" gap={4}>

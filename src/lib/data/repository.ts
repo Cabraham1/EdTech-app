@@ -1,40 +1,20 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { randomUUID } from "crypto";
 import { Student, StudentInput } from "./types";
-import { STUDENT_DATA_FILE } from "../utils/constants";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(process.cwd(), STUDENT_DATA_FILE);
 
 let inMemoryStore: Student[] | null = null;
-let isFileSystemWritable = true;
 
-async function initializeData(): Promise<Student[]> {
+async function initializeData(initialData?: Student[]): Promise<Student[]> {
   if (inMemoryStore !== null) {
     return inMemoryStore;
   }
 
-  try {
-    const fileContent = await fs.readFile(DATA_FILE, "utf-8");
-    inMemoryStore = JSON.parse(fileContent) as Student[];
-    return inMemoryStore;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      try {
-        await fs.mkdir(DATA_DIR, { recursive: true });
-        await fs.writeFile(DATA_FILE, JSON.stringify([], null, 2), "utf-8");
-        inMemoryStore = [];
-        return inMemoryStore;
-      } catch (writeError) {
-        isFileSystemWritable = false;
-        inMemoryStore = [];
-        return inMemoryStore;
-      }
-    }
-    inMemoryStore = [];
+  if (initialData && initialData.length > 0) {
+    inMemoryStore = initialData;
     return inMemoryStore;
   }
+
+  inMemoryStore = [];
+  return inMemoryStore;
 }
 
 async function readStudents(): Promise<Student[]> {
@@ -46,17 +26,6 @@ async function readStudents(): Promise<Student[]> {
 
 async function writeStudents(students: Student[]): Promise<void> {
   inMemoryStore = students;
-
-  if (!isFileSystemWritable) {
-    return;
-  }
-
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(DATA_FILE, JSON.stringify(students, null, 2), "utf-8");
-  } catch (error) {
-    isFileSystemWritable = false;
-  }
 }
 
 export class StudentRepository {
@@ -165,6 +134,40 @@ export class StudentRepository {
     }
 
     return students;
+  }
+
+  async syncWithClient(clientStudents: Student[]): Promise<void> {
+    if (!clientStudents || clientStudents.length === 0) {
+      return;
+    }
+
+    if (inMemoryStore === null) {
+      inMemoryStore = [...clientStudents];
+      StudentRepository.cache = inMemoryStore;
+      StudentRepository.cacheTimestamp = Date.now();
+      return;
+    }
+
+    const serverStudents = await this.findAll();
+    const clientMap = new Map(clientStudents.map((s) => [s.id, s]));
+    const serverMap = new Map(serverStudents.map((s) => [s.id, s]));
+
+    const merged = new Map<string, Student>();
+
+    for (const [id, student] of clientMap) {
+      merged.set(id, student);
+    }
+
+    for (const [id, student] of serverMap) {
+      if (!merged.has(id)) {
+        merged.set(id, student);
+      }
+    }
+
+    const mergedStudents = Array.from(merged.values());
+    await writeStudents(mergedStudents);
+    StudentRepository.cache = mergedStudents;
+    StudentRepository.cacheTimestamp = Date.now();
   }
 }
 

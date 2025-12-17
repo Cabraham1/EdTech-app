@@ -20,7 +20,7 @@ A modern, full-stack Student Information Management System built with Next.js 14
 - ✅ **Form Validation** - Client-side and server-side validation with detailed error messages
 - ✅ **Responsive Design** - Mobile-first design using Tailwind CSS and Chakra UI
 - ✅ **API Routes** - RESTful API endpoints for all CRUD operations
-- ✅ **In-Memory Database** - File-based storage with JSON persistence
+- ✅ **Client-Side Storage** - localStorage for data persistence across page reloads
 - ✅ **Unit Tests** - Test coverage for validation and service layers
 
 ## Technology Stack
@@ -29,7 +29,7 @@ A modern, full-stack Student Information Management System built with Next.js 14
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS + Chakra UI
 - **Form Handling**: React Hook Form
-- **Data Storage**: JSON file-based (in-memory with persistence)
+- **Data Storage**: localStorage (client-side) + in-memory (server-side)
 - **Testing**: Jest + React Testing Library
 - **Package Manager**: Yarn
 
@@ -74,13 +74,14 @@ edtech-app/
 │   │   ├── utils/              # Utility functions
 │   │   │   ├── validation.ts   # Validation logic
 │   │   │   └── constants.ts    # Constants and config
-│   │   └── hooks/              # Custom React hooks
-│   │       └── useDebouncedCallback.ts
+│   │   ├── hooks/              # Custom React hooks
+│   │   │   ├── useDebouncedCallback.ts
+│   │   │   └── useStudentStorage.ts
+│   │   └── storage/            # Storage utilities
+│   │       └── localStorage.ts # localStorage helpers
 │   └── __tests__/              # Unit tests
 │       ├── utils/
 │       └── services/
-├── data/
-│   └── students.json           # Persistent data storage
 └── README.md                   # This file
 ```
 
@@ -299,7 +300,7 @@ Student list and detail pages use Next.js SSR for optimal performance and SEO.
 
 Potential improvements for production:
 
-1. **Database Integration**: Migrate from file storage to PostgreSQL/MongoDB
+1. **Database Integration**: Migrate from localStorage to PostgreSQL/MongoDB for multi-user support
 2. **Enhanced Authentication**: Upgrade to JWT-based authentication with role-based access
 3. **Pagination**: Add pagination for large student lists
 4. **Export Functionality**: CSV/PDF export of student data
@@ -317,4 +318,4 @@ Built as part of a frontend engineering assessment.
 
 ---
 
-**Note**: This application uses file-based storage for simplicity. In a production environment, consider migrating to a proper database system.
+**Note**: This application uses localStorage for client-side persistence, which works great for single-user scenarios and serverless deployments. For multi-user support, consider migrating to a proper database system.
