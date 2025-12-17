@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useCallback } from 'react'
 import { Student } from '../data/types'
 import {
   getStudentsFromStorage,
@@ -8,15 +8,15 @@ import {
 } from '../storage/localStorage'
 
 export function useStudentStorage() {
-  const syncToStorage = (students: Student[]) => {
+  const syncToStorage = useCallback((students: Student[]) => {
     saveStudentsToStorage(students)
-  }
+  }, [])
 
-  const getFromStorage = (): Student[] => {
+  const getFromStorage = useCallback((): Student[] => {
     return getStudentsFromStorage()
-  }
+  }, [])
 
-  const getStorageHeader = (): Record<string, string> => {
+  const getStorageHeader = useCallback((): Record<string, string> => {
     const students = getStudentsFromStorage()
     if (students.length > 0) {
       return {
@@ -24,7 +24,7 @@ export function useStudentStorage() {
       }
     }
     return {}
-  }
+  }, [])
 
   return {
     syncToStorage,

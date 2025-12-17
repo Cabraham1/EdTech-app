@@ -30,51 +30,46 @@ interface StudentDetailPageProps {
 export default function StudentDetailPage({ params }: StudentDetailPageProps) {
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { getFromStorage, getStorageHeader } = useStudentStorage();
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchStudent = async () => {
+      // Check localStorage first
+      const storedStudents = getFromStorage();
+      const localStudent = storedStudents.find((s) => s.id === params.id);
+      if (localStudent && !cancelled) {
+        setStudent(localStudent);
+        setLoading(false);
+      }
+
+      // Fetch from API to sync
       try {
-        // First check localStorage
-        const storedStudents = getFromStorage();
-        const localStudent = storedStudents.find((s) => s.id === params.id);
-
-        if (localStudent) {
-          setStudent(localStudent);
-          setLoading(false);
-        }
-
-        // Then fetch from API (which will sync)
-        const headers: Record<string, string> = {
-          ...getStorageHeader(),
-        };
-
         const response = await fetch(`/api/students/${params.id}`, {
-          headers,
+          headers: { ...getStorageHeader() },
         });
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError("Student not found");
-            setLoading(false);
-            return;
-          }
-          throw new Error("Failed to fetch student");
+        if (response.ok && !cancelled) {
+          const result = await response.json();
+          if (result.student) setStudent(result.student);
         }
-
-        const result = await response.json();
-        if (result.student) {
-          setStudent(result.student);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to fetch student:", err);
         }
-      } catch (err: any) {
-        setError(err.message || "Failed to load student");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchStudent();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
@@ -94,7 +89,7 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
     );
   }
 
-  if (error || !student) {
+  if (!student) {
     return (
       <Box
         bgGradient="linear(to-br, blue.50, purple.50)"
@@ -108,7 +103,7 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
                 404
               </Heading>
               <Text fontSize="lg" mb={6} color="gray.600">
-                Page not found
+                Student not found
               </Text>
               <Button as={Link} href="/students" colorScheme="blue" size="lg">
                 Go to Students List
@@ -120,14 +115,12 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
-  };
 
   return (
     <Box
@@ -177,48 +170,15 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
                 </Box>
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                  <Box>
-                    <Text
-                      fontSize="sm"
-                      color="gray.500"
-                      mb={2}
-                      fontWeight="semibold"
-                    >
-                      REGISTRATION NUMBER
-                    </Text>
-                    <Text fontSize="xl" fontWeight="medium" color="gray.800">
-                      {student.registrationNumber}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text
-                      fontSize="sm"
-                      color="gray.500"
-                      mb={2}
-                      fontWeight="semibold"
-                    >
-                      MAJOR
-                    </Text>
-                    <Text fontSize="xl" fontWeight="medium" color="gray.800">
-                      {student.major}
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Text
-                      fontSize="sm"
-                      color="gray.500"
-                      mb={2}
-                      fontWeight="semibold"
-                    >
-                      DATE OF BIRTH
-                    </Text>
-                    <Text fontSize="xl" fontWeight="medium" color="gray.800">
-                      {formatDate(student.dob)}
-                    </Text>
-                  </Box>
-
+                  <Field
+                    label="REGISTRATION NUMBER"
+                    value={student.registrationNumber}
+                  />
+                  <Field label="MAJOR" value={student.major} />
+                  <Field
+                    label="DATE OF BIRTH"
+                    value={formatDate(student.dob)}
+                  />
                   <Box>
                     <Text
                       fontSize="sm"
@@ -252,6 +212,19 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
           <DeleteButton studentId={params.id} />
         </VStack>
       </Container>
+    </Box>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <Box>
+      <Text fontSize="sm" color="gray.500" mb={2} fontWeight="semibold">
+        {label}
+      </Text>
+      <Text fontSize="xl" fontWeight="medium" color="gray.800">
+        {value}
+      </Text>
     </Box>
   );
 }
