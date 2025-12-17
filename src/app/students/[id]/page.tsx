@@ -20,6 +20,7 @@ import {
 import { DeleteButton } from "@/components/DeleteButton";
 import { Student } from "@/lib/data/types";
 import { useStudentStorage } from "@/lib/hooks/useStudentStorage";
+import apiClient from "@/lib/api/client";
 
 interface StudentDetailPageProps {
   params: {
@@ -30,7 +31,7 @@ interface StudentDetailPageProps {
 export default function StudentDetailPage({ params }: StudentDetailPageProps) {
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
-  const { getFromStorage, getStorageHeader } = useStudentStorage();
+  const { getFromStorage } = useStudentStorage();
 
   useEffect(() => {
     let cancelled = false;
@@ -46,15 +47,11 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
 
       // Fetch from API to sync
       try {
-        const response = await fetch(`/api/students/${params.id}`, {
-          headers: { ...getStorageHeader() },
-        });
-
-        if (response.ok && !cancelled) {
-          const result = await response.json();
-          if (result.student) setStudent(result.student);
+        const response = await apiClient.get(`/students/${params.id}`);
+        if (!cancelled && response.data.student) {
+          setStudent(response.data.student);
         }
-      } catch (err) {
+      } catch (err: any) {
         if (!cancelled) {
           console.error("Failed to fetch student:", err);
         }

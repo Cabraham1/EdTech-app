@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { StudentForm } from '@/components/StudentForm'
 import { Student } from '@/lib/data/types'
 import { useStudentStorage } from '@/lib/hooks/useStudentStorage'
+import apiClient from '@/lib/api/client'
 
 interface EditStudentPageProps {
   params: {
@@ -29,7 +30,7 @@ export default function EditStudentPage({
   const [student, setStudent] = useState<Student | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { getFromStorage, getStorageHeader } = useStudentStorage()
+  const { getFromStorage } = useStudentStorage()
 
   useEffect(() => {
     const fetchStudent = async () => {
@@ -44,29 +45,12 @@ export default function EditStudentPage({
         }
 
         // Then fetch from API (which will sync)
-        const headers: Record<string, string> = {
-          ...getStorageHeader(),
-        }
-
-        const response = await fetch(`/api/students/${params.id}`, {
-          headers,
-        })
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError('Student not found')
-            setLoading(false)
-            return
-          }
-          throw new Error('Failed to fetch student')
-        }
-
-        const result = await response.json()
-        if (result.student) {
-          setStudent(result.student)
+        const response = await apiClient.get(`/students/${params.id}`)
+        if (response.data.student) {
+          setStudent(response.data.student)
         }
       } catch (err: any) {
-        setError(err.message || 'Failed to load student')
+        console.error('Failed to load student:', err)
       } finally {
         setLoading(false)
       }
@@ -92,7 +76,7 @@ export default function EditStudentPage({
     )
   }
 
-  if (error || !student) {
+  if (!student) {
     return (
       <Box
         bgGradient="linear(to-br, blue.50, purple.50)"

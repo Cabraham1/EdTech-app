@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { useStudentStorage } from '@/lib/hooks/useStudentStorage'
+import apiClient from '@/lib/api/client'
 
 interface DeleteButtonProps {
   studentId: string
@@ -25,28 +26,15 @@ export function DeleteButton({ studentId }: DeleteButtonProps) {
   const router = useRouter()
   const toast = useToast()
   const [isDeleting, setIsDeleting] = useState(false)
-  const { getStorageHeader, syncToStorage } = useStudentStorage()
+  const { syncToStorage } = useStudentStorage()
 
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      const headers: Record<string, string> = {
-        ...getStorageHeader(),
-      }
+      const response = await apiClient.delete(`/students/${studentId}`)
 
-      const response = await fetch(`/api/students/${studentId}`, {
-        method: 'DELETE',
-        headers,
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete student')
-      }
-
-      if (result.allStudents) {
-        syncToStorage(result.allStudents)
+      if (response.data.allStudents) {
+        syncToStorage(response.data.allStudents)
       }
 
       toast({
@@ -62,7 +50,7 @@ export function DeleteButton({ studentId }: DeleteButtonProps) {
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'An unexpected error occurred',
+        description: error.response?.data?.error || error.message || 'An unexpected error occurred',
         status: 'error',
         duration: 5000,
         isClosable: true,

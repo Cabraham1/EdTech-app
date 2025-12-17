@@ -14,6 +14,7 @@ import { Student, StudentInput } from '@/lib/data/types'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useStudentStorage } from '@/lib/hooks/useStudentStorage'
+import apiClient from '@/lib/api/client'
 
 interface StudentFormProps {
   student?: Student
@@ -24,7 +25,7 @@ export function StudentForm({ student, isEdit = false }: StudentFormProps) {
   const router = useRouter()
   const toast = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { getStorageHeader, syncToStorage } = useStudentStorage()
+  const { syncToStorage } = useStudentStorage()
 
   const {
     register,
@@ -45,49 +46,13 @@ export function StudentForm({ student, isEdit = false }: StudentFormProps) {
   const onSubmit = async (data: StudentInput) => {
     setIsSubmitting(true)
     try {
-      const url = isEdit
-        ? `/api/students/${student!.id}`
-        : '/api/students'
-      const method = isEdit ? 'PUT' : 'POST'
+      const url = isEdit ? `/students/${student!.id}` : '/students'
+      const response = isEdit
+        ? await apiClient.put(url, data)
+        : await apiClient.post(url, data)
 
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...getStorageHeader(),
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers,
-        body: JSON.stringify(data),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        if (result.details) {
-          Object.keys(result.details).forEach((field) => {
-            toast({
-              title: 'Validation Error',
-              description: result.details[field][0],
-              status: 'error',
-              duration: 5000,
-              isClosable: true,
-            })
-          })
-        } else {
-          toast({
-            title: 'Error',
-            description: result.error || 'Failed to save student',
-            status: 'error',
-            duration: 5000,
-            isClosable: true,
-          })
-        }
-        return
-      }
-
-      if (result.allStudents) {
-        syncToStorage(result.allStudents)
+      if (response.data.allStudents) {
+        syncToStorage(response.data.allStudents)
       }
 
       toast({
@@ -100,16 +65,28 @@ export function StudentForm({ student, isEdit = false }: StudentFormProps) {
         isClosable: true,
       })
 
-      router.push(`/students/${result.student.id}`)
+      router.push(`/students/${response.data.student.id}`)
       router.refresh()
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      })
+    } catch (error: any) {
+      if (error.response?.data?.details) {
+        Object.keys(error.response.data.details).forEach((field) => {
+          toast({
+            title: 'Validation Error',
+            description: error.response.data.details[field][0],
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          })
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: error.response?.data?.error || 'An unexpected error occurred',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        })
+      }
     } finally {
       setIsSubmitting(false)
     }

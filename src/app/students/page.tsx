@@ -22,13 +22,13 @@ import { StudentCard } from "@/components/StudentCard";
 import { SearchBar } from "@/components/SearchBar";
 import { Student } from "@/lib/data/types";
 import { useStudentStorage } from "@/lib/hooks/useStudentStorage";
+import apiClient from "@/lib/api/client";
 
 export default function StudentsPage() {
   const searchParams = useSearchParams();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  const { getFromStorage, getStorageHeader, syncToStorage } =
-    useStudentStorage();
+  const { getFromStorage, syncToStorage } = useStudentStorage();
 
   const search = searchParams.get("search") || undefined;
 
@@ -43,20 +43,10 @@ export default function StudentsPage() {
 
       // Fetch from API to sync
       try {
-        const headers: Record<string, string> = {
-          ...getStorageHeader(),
-        };
-
-        const response = await fetch("/api/students", {
-          headers,
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.students) {
-            setStudents(result.students);
-            syncToStorage(result.students);
-          }
+        const response = await apiClient.get("/students");
+        if (response.data.students) {
+          setStudents(response.data.students);
+          syncToStorage(response.data.students);
         }
       } catch (err) {
         console.error("Failed to fetch students:", err);
