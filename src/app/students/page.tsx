@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
 import {
   Container,
   Heading,
@@ -12,39 +15,122 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-} from '@chakra-ui/react'
-import Link from 'next/link'
-import { studentService } from '@/lib/services/studentService'
-import { StudentCard } from '@/components/StudentCard'
-import { SearchBar } from '@/components/SearchBar'
-import { FilterControls } from '@/components/FilterControls'
-import { StudentStorageSync } from '@/components/StudentStorageSync'
+} from "@chakra-ui/react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { StudentCard } from "@/components/StudentCard";
+import { SearchBar } from "@/components/SearchBar";
+import { FilterControls } from "@/components/FilterControls";
+import { Student } from "@/lib/data/types";
+import { useStudentStorage } from "@/lib/hooks/useStudentStorage";
 
-interface StudentsPageProps {
-  searchParams: {
-    search?: string
-    minGpa?: string
-    maxGpa?: string
+export default function StudentsPage() {
+  const searchParams = useSearchParams();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { getFromStorage, getStorageHeader, syncToStorage } =
+    useStudentStorage();
+
+  const search = searchParams.get("search") || undefined;
+  const minGpa = searchParams.get("minGpa")
+    ? parseFloat(searchParams.get("minGpa")!)
+    : undefined;
+  const maxGpa = searchParams.get("maxGpa")
+    ? parseFloat(searchParams.get("maxGpa")!)
+    : undefined;
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      // Check localStorage first
+      const storedStudents = getFromStorage();
+      if (storedStudents.length > 0) {
+        setStudents(storedStudents);
+        setLoading(false);
+      }
+
+      // Fetch from API to sync
+      try {
+        const headers: Record<string, string> = {
+          ...getStorageHeader(),
+        };
+
+        const response = await fetch("/api/students", {
+          headers,
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.students) {
+            setStudents(result.students);
+            syncToStorage(result.students);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch students:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filteredStudents = useMemo(() => {
+    let filtered = [...students];
+
+    if (search) {
+      const lowerSearch = search.toLowerCase();
+      filtered = filtered.filter(
+        (s) =>
+          s.name.toLowerCase().includes(lowerSearch) ||
+          s.registrationNumber.includes(lowerSearch) ||
+          s.major.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    if (minGpa !== undefined) {
+      filtered = filtered.filter((s) => s.gpa >= minGpa);
+    }
+
+    if (maxGpa !== undefined) {
+      filtered = filtered.filter((s) => s.gpa <= maxGpa);
+    }
+
+    return filtered;
+  }, [students, search, minGpa, maxGpa]);
+
+  const avgGpa =
+    students.length > 0
+      ? students.reduce((sum, s) => sum + s.gpa, 0) / students.length
+      : 0;
+
+  if (loading) {
+    return (
+      <Box
+        bgGradient="linear(to-r, blue.50, purple.50)"
+        minH="calc(100vh - 64px)"
+        py={8}
+      >
+        <Container maxW="container.xl">
+          <VStack spacing={6} align="stretch">
+            <Box textAlign="center" py={20}>
+              <Text fontSize="xl" color="gray.500">
+                Loading students...
+              </Text>
+            </Box>
+          </VStack>
+        </Container>
+      </Box>
+    );
   }
-}
-
-export default async function StudentsPage({
-  searchParams,
-}: StudentsPageProps) {
-  const search = searchParams.search
-  const minGpa = searchParams.minGpa ? parseFloat(searchParams.minGpa) : undefined
-  const maxGpa = searchParams.maxGpa ? parseFloat(searchParams.maxGpa) : undefined
-
-  const allStudents = await studentService.getAllStudents()
-  const students = await studentService.getAllStudents(search, minGpa, maxGpa)
-  
-  const avgGpa = allStudents.length > 0
-    ? allStudents.reduce((sum, s) => sum + s.gpa, 0) / allStudents.length
-    : 0
 
   return (
-    <Box bgGradient="linear(to-r, blue.50, purple.50)" minH="calc(100vh - 64px)" py={8}>
-      <StudentStorageSync />
+    <Box
+      bgGradient="linear(to-r, blue.50, purple.50)"
+      minH="calc(100vh - 64px)"
+      py={8}
+    >
       <Container maxW="container.xl">
         <VStack spacing={6} align="stretch">
           <HStack justify="space-between" flexWrap="wrap" gap={4}>
@@ -52,9 +138,7 @@ export default async function StudentsPage({
               <Heading size="xl" mb={2} color="blue.600">
                 Student Directory
               </Heading>
-              <Text color="gray.600">
-                Manage and track student information
-              </Text>
+              <Text color="gray.600">Manage and track student information</Text>
             </Box>
             <Button
               as={Link}
@@ -72,7 +156,7 @@ export default async function StudentsPage({
               <CardBody>
                 <Stat>
                   <StatLabel>Total Students</StatLabel>
-                  <StatNumber>{allStudents.length}</StatNumber>
+                  <StatNumber>{students.length}</StatNumber>
                 </Stat>
               </CardBody>
             </Card>
@@ -88,7 +172,7 @@ export default async function StudentsPage({
               <CardBody>
                 <Stat>
                   <StatLabel>Filtered Results</StatLabel>
-                  <StatNumber>{students.length}</StatNumber>
+                  <StatNumber>{filteredStudents.length}</StatNumber>
                 </Stat>
               </CardBody>
             </Card>
@@ -97,16 +181,16 @@ export default async function StudentsPage({
           <Card bg="white" boxShadow="lg" p={6}>
             <CardBody>
               <VStack spacing={4} align="stretch">
-                <SearchBar initialValue={search || ''} />
+                <SearchBar initialValue={search || ""} />
                 <FilterControls
-                  initialMinGpa={searchParams.minGpa || ''}
-                  initialMaxGpa={searchParams.maxGpa || ''}
+                  initialMinGpa={searchParams.get("minGpa") || ""}
+                  initialMaxGpa={searchParams.get("maxGpa") || ""}
                 />
               </VStack>
             </CardBody>
           </Card>
 
-          {students.length === 0 ? (
+          {filteredStudents.length === 0 ? (
             <Card bg="white" boxShadow="md">
               <CardBody>
                 <Box textAlign="center" py={12}>
@@ -115,15 +199,15 @@ export default async function StudentsPage({
                   </Text>
                   <Text fontSize="md" color="gray.400">
                     {search || minGpa || maxGpa
-                      ? 'Try adjusting your filters.'
-                      : 'Add your first student to get started.'}
+                      ? "Try adjusting your filters."
+                      : "Add your first student to get started."}
                   </Text>
                 </Box>
               </CardBody>
             </Card>
           ) : (
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-              {students.map((student) => (
+              {filteredStudents.map((student) => (
                 <StudentCard key={student.id} student={student} />
               ))}
             </SimpleGrid>
@@ -131,6 +215,5 @@ export default async function StudentsPage({
         </VStack>
       </Container>
     </Box>
-  )
+  );
 }
-
