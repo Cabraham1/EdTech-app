@@ -20,7 +20,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { StudentCard } from "@/components/StudentCard";
 import { SearchBar } from "@/components/SearchBar";
-import { FilterControls } from "@/components/FilterControls";
 import { Student } from "@/lib/data/types";
 import { useStudentStorage } from "@/lib/hooks/useStudentStorage";
 
@@ -32,12 +31,6 @@ export default function StudentsPage() {
     useStudentStorage();
 
   const search = searchParams.get("search") || undefined;
-  const minGpa = searchParams.get("minGpa")
-    ? parseFloat(searchParams.get("minGpa")!)
-    : undefined;
-  const maxGpa = searchParams.get("maxGpa")
-    ? parseFloat(searchParams.get("maxGpa")!)
-    : undefined;
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -89,16 +82,8 @@ export default function StudentsPage() {
       );
     }
 
-    if (minGpa !== undefined) {
-      filtered = filtered.filter((s) => s.gpa >= minGpa);
-    }
-
-    if (maxGpa !== undefined) {
-      filtered = filtered.filter((s) => s.gpa <= maxGpa);
-    }
-
     return filtered;
-  }, [students, search, minGpa, maxGpa]);
+  }, [students, search]);
 
   const avgGpa =
     students.length > 0
@@ -134,21 +119,26 @@ export default function StudentsPage() {
       <Container maxW="container.xl">
         <VStack spacing={6} align="stretch">
           <HStack justify="space-between" flexWrap="wrap" gap={4}>
-            <Box>
+            <Box flex="1">
               <Heading size="xl" mb={2} color="blue.600">
                 Student Directory
               </Heading>
               <Text color="gray.600">Manage and track student information</Text>
             </Box>
-            <Button
-              as={Link}
-              href="/students/new"
-              colorScheme="blue"
-              size="lg"
-              boxShadow="md"
-            >
-              + Add New Student
-            </Button>
+            <HStack spacing={4} flexWrap="wrap">
+              <Box w={{ base: "full", md: "300px" }}>
+                <SearchBar initialValue={search || ""} />
+              </Box>
+              <Button
+                as={Link}
+                href="/students/new"
+                colorScheme="blue"
+                size="lg"
+                boxShadow="md"
+              >
+                + Add New Student
+              </Button>
+            </HStack>
           </HStack>
 
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
@@ -178,18 +168,6 @@ export default function StudentsPage() {
             </Card>
           </SimpleGrid>
 
-          <Card bg="white" boxShadow="lg" p={6}>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                <SearchBar initialValue={search || ""} />
-                <FilterControls
-                  initialMinGpa={searchParams.get("minGpa") || ""}
-                  initialMaxGpa={searchParams.get("maxGpa") || ""}
-                />
-              </VStack>
-            </CardBody>
-          </Card>
-
           {filteredStudents.length === 0 ? (
             <Card bg="white" boxShadow="md">
               <CardBody>
@@ -198,8 +176,8 @@ export default function StudentsPage() {
                     No students found
                   </Text>
                   <Text fontSize="md" color="gray.400">
-                    {search || minGpa || maxGpa
-                      ? "Try adjusting your filters."
+                    {search
+                      ? "Try adjusting your search."
                       : "Add your first student to get started."}
                   </Text>
                 </Box>

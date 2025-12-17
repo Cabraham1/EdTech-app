@@ -29,18 +29,19 @@ export function SearchBar({ initialValue = '' }: SearchBarProps) {
   }, 300)
 
   return (
-    <InputGroup>
+    <InputGroup size="md">
       <InputLeftElement pointerEvents="none">
         <SearchIcon color="gray.300" />
       </InputLeftElement>
       <Input
-        placeholder="Search by name, registration number, or major..."
+        placeholder="Search by name, reg number, or major..."
         value={searchValue}
         onChange={(e) => {
           setSearchValue(e.target.value)
           handleSearch(e.target.value)
         }}
         bg="white"
+        size="md"
       />
     </InputGroup>
   )
